@@ -72,7 +72,7 @@ export default function ReportsPage() {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
-            <Button variant="outline" className="border-slate-700 bg-transparent">
+            <Button variant="outline" className="border-slate-700 bg-transparent text-white">
               <Calendar className="w-4 h-4 mr-2" />
               Apply Filter
             </Button>

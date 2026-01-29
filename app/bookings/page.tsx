@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   useBookings,
   useUpdateBookingStatus,
@@ -44,7 +44,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, CheckCircle2, XCircle, Clock } from "lucide-react";
+import {
+  Search,
+  Filter,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  MapPin,
+  Calendar,
+  User,
+  CreditCard,
+} from "lucide-react";
+import Image from "next/image";
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   pending: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
@@ -56,14 +67,18 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 export default function BookingsPage() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewBooking, setViewBooking] = useState<any | null>(null);
   const [deleteBooking, setDeleteBooking] = useState<any | null>(null);
 
   const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
+
+  // If your API supports searching, pass it here (recommended):
+  // const { data, isLoading } = useBookings(page, limit, { ...filters, q: searchQuery });
   const { data, isLoading } = useBookings(page, limit, filters);
+
   const updateStatus = useUpdateBookingStatus();
   const confirmBooking = useConfirmBooking();
   const removeBooking = useDeleteBooking();
@@ -77,6 +92,17 @@ export default function BookingsPage() {
   };
 
   const totalPages = data?.totalPages || 1;
+
+  // Client-side search fallback (if API doesn’t support search yet)
+  const bookings = useMemo(() => {
+    const list = data?.bookings || [];
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((b: any) => {
+      const id = (b.bookingId || b._id || "").toString().toLowerCase();
+      return id.includes(q);
+    });
+  }, [data?.bookings, searchQuery]);
 
   return (
     <AdminLayout>
@@ -104,7 +130,13 @@ export default function BookingsPage() {
             </div>
 
             <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setPage(1);
+                }}
+              >
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -117,9 +149,11 @@ export default function BookingsPage() {
                   <SelectItem value="noshow">No Show</SelectItem>
                 </SelectContent>
               </Select>
+
               <Button
                 variant="outline"
                 className="border-slate-700 text-slate-300 bg-transparent"
+                type="button"
               >
                 <Filter className="w-4 h-4 mr-2" />
                 More Filters
@@ -131,7 +165,7 @@ export default function BookingsPage() {
         {/* Table */}
         {isLoading ? (
           <TableSkeleton columns={6} rows={10} />
-        ) : data?.bookings && data.bookings.length > 0 ? (
+        ) : bookings.length > 0 ? (
           <Card className="border-slate-700 bg-slate-900 overflow-hidden">
             <div className="overflow-x-auto">
               <Table>
@@ -139,7 +173,9 @@ export default function BookingsPage() {
                   <TableRow className="bg-slate-800 border-slate-700">
                     <TableHead className="text-slate-300">ID</TableHead>
                     <TableHead className="text-slate-300">Details</TableHead>
-                    <TableHead className="text-slate-300">User / Phone</TableHead>
+                    <TableHead className="text-slate-300">
+                      User / Phone
+                    </TableHead>
                     <TableHead className="text-slate-300">Amount</TableHead>
                     <TableHead className="text-slate-300">Status</TableHead>
                     <TableHead className="text-right text-slate-300">
@@ -147,45 +183,59 @@ export default function BookingsPage() {
                     </TableHead>
                   </TableRow>
                 </TableHeader>
+
                 <TableBody>
-                  {data.bookings.map((booking: any) => {
+                  {bookings.map((booking: any) => {
                     const colors =
                       statusColors[booking.status] || statusColors.pending;
+
                     return (
                       <TableRow key={booking._id} className="border-slate-700">
                         <TableCell className="font-medium text-white">
                           {booking.bookingId || booking._id}
                         </TableCell>
+
                         <TableCell className="text-slate-300">
                           <div>
-                            <p className="font-medium">{booking.pitchId?.name}</p>
+                            <p className="font-medium">
+                              {booking.pitchId?.name || "N/A"}
+                            </p>
                             <p className="text-xs text-slate-500">
-                              {new Date(booking.date).toLocaleDateString()} at{" "}
-                              {booking.timeSlot}
+                              {booking.date
+                                ? new Date(booking.date).toLocaleDateString()
+                                : "N/A"}{" "}
+                              {booking.timeSlot ? `at ${booking.timeSlot}` : ""}
                             </p>
                           </div>
                         </TableCell>
+
                         <TableCell className="text-slate-300">
                           <div>
                             <p className="font-medium">
                               {booking.userId?.name || "Unknown"}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {booking.userId?.phone}
+                              {booking.userId?.phone || "N/A"}
                             </p>
                           </div>
                         </TableCell>
+
                         <TableCell className="font-medium text-white">
-                          {booking.price?.toLocaleString()} {booking.currency}
+                          {booking.price?.toLocaleString?.() ??
+                            booking.price ??
+                            "N/A"}{" "}
+                          {booking.currency || ""}
                         </TableCell>
+
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={`border-0 ${colors.bg} ${colors.text}`}
+                            className={`border-0 ${colors.bg} ${colors.text} capitalize`}
                           >
                             {booking.status}
                           </Badge>
                         </TableCell>
+
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             {booking.status === "pending" && (
@@ -195,50 +245,60 @@ export default function BookingsPage() {
                                   className="bg-green-600 hover:bg-green-700"
                                   onClick={() => handleConfirm(booking._id)}
                                   disabled={confirmBooking.isPending}
+                                  type="button"
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Confirm
                                 </Button>
+
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
                                   onClick={() =>
-                                    handleStatusChange(
-                                      booking._id,
-                                      "cancelled"
-                                    )
+                                    handleStatusChange(booking._id, "cancelled")
                                   }
                                   disabled={updateStatus.isPending}
+                                  type="button"
                                 >
                                   <XCircle className="w-3 h-3 mr-1" />
                                   Reject
                                 </Button>
                               </>
                             )}
+
                             {booking.status === "confirmed" && (
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="border-slate-600 bg-transparent"
+                                type="button"
+                                onClick={() =>
+                                  handleStatusChange(booking._id, "completed")
+                                }
+                                disabled={updateStatus.isPending}
                               >
                                 <Clock className="w-3 h-3 mr-1" />
                                 Complete
                               </Button>
                             )}
+
                             <Button
                               size="sm"
                               variant="ghost"
                               className="text-blue-400"
                               onClick={() => setViewBooking(booking)}
+                              type="button"
                             >
                               View Details
                             </Button>
+
                             <Button
                               size="sm"
                               variant="outline"
                               className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
                               onClick={() => setDeleteBooking(booking)}
+                              type="button"
                             >
                               Delete
                             </Button>
@@ -258,30 +318,33 @@ export default function BookingsPage() {
         )}
 
         {/* Pagination */}
-        {data?.bookings && data.bookings.length > 0 && (
+        {bookings.length > 0 && (
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-slate-400">
-                Page {page} of {totalPages} ({data?.total} total bookings)
-              </p>
-            </div>
+            <p className="text-sm text-slate-400">
+              Page {page} of {totalPages} ({data?.total} total bookings)
+            </p>
+
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="border-slate-700 bg-transparent text-white"
                 disabled={page === 1}
                 onClick={() => setPage(Math.max(1, page - 1))}
+                type="button"
               >
                 Previous
               </Button>
+
               <div className="flex items-center px-4 py-2 text-sm text-slate-300">
                 {page} / {totalPages}
               </div>
+
               <Button
                 variant="outline"
                 className="border-slate-700 bg-transparent text-white"
                 disabled={page >= totalPages}
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
+                type="button"
               >
                 Next
               </Button>
@@ -290,43 +353,192 @@ export default function BookingsPage() {
         )}
       </div>
 
-      <Dialog open={!!viewBooking} onOpenChange={(open) => !open && setViewBooking(null)}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+      {/* Detail Modal (single) */}
+      <Dialog
+        open={!!viewBooking}
+        onOpenChange={(open) => !open && setViewBooking(null)}
+      >
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
+            <DialogTitle>Full Booking Details</DialogTitle>
           </DialogHeader>
+
           {viewBooking && (
-            <div className="space-y-3 text-sm text-slate-300">
-              <div>
-                <span className="text-slate-400">Booking ID:</span>{" "}
-                {viewBooking.bookingId || viewBooking._id}
+            <div className="space-y-6 pt-2">
+              {/* Pitch Visual Info */}
+              <div className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg">
+                <img
+                  src={
+                    viewBooking.pitchId?.image?.url ||
+                    viewBooking.pitchId?.imageUrl ||
+                    "/placeholder.png"
+                  }
+                  className="w-16 h-16 rounded object-cover border border-slate-700"
+                  alt="Pitch"
+                />
+                <div>
+                  <h3 className="font-bold text-lg leading-tight">
+                    {viewBooking.pitchId?.name || "N/A"}
+                  </h3>
+                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                    <MapPin className="w-3 h-3 text-blue-400" />
+                    {viewBooking.pitchId?.location || "N/A"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400">User:</span>{" "}
-                {viewBooking.userId?.name || "N/A"} ({viewBooking.userId?.phone || "N/A"})
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">
+                    Booking Info
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-slate-400">Booking ID:</span>{" "}
+                      {(viewBooking.bookingId || viewBooking._id)?.slice(-4)}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Status:</span>{" "}
+                      {viewBooking.status}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Date:</span>{" "}
+                      {viewBooking.date
+                        ? new Date(viewBooking.date).toLocaleDateString(
+                            undefined,
+                            { month: "short", day: "numeric", year: "numeric" },
+                          )
+                        : "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Time Slot:</span>{" "}
+                      {viewBooking.timeSlot || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Price:</span>{" "}
+                      {viewBooking.price ?? "N/A"} {viewBooking.currency || ""}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Created:</span>{" "}
+                      {viewBooking.createdAt
+                        ? new Date(viewBooking.createdAt).toLocaleString()
+                        : "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Updated:</span>{" "}
+                      {viewBooking.updatedAt
+                        ? new Date(viewBooking.updatedAt).toLocaleString()
+                        : "N/A"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+                  <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">
+                    User Info
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-slate-400">Name:</span>{" "}
+                      {viewBooking.userId?.name || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Phone:</span>{" "}
+                      {viewBooking.userId?.phone || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">City:</span>{" "}
+                      {viewBooking.userId?.city || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Role:</span>{" "}
+                      {viewBooking.userId?.role || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Plan:</span>{" "}
+                      {viewBooking.userId?.currentPlan || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Verified:</span>{" "}
+                      {viewBooking.userId?.verificationInfo?.verified
+                        ? "Yes"
+                        : "No"}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400">Pitch:</span>{" "}
-                {viewBooking.pitchId?.name || "N/A"}
+
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+                <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">
+                  Pitch Info
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-slate-400">Pitch ID:</span>{" "}
+                      {viewBooking.pitchId?._id || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Name:</span>{" "}
+                      {viewBooking.pitchId?.name || "N/A"}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Location:</span>{" "}
+                      {viewBooking.pitchId?.location || "N/A"}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-slate-400">Pitch Price:</span>{" "}
+                      {viewBooking.pitchId?.price?.toLocaleString?.() ??
+                        viewBooking.pitchId?.price ??
+                        "N/A"}{" "}
+                      {viewBooking.pitchId?.currency ||
+                        viewBooking.currency ||
+                        ""}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">Image:</span>{" "}
+                      <Image
+                        src={viewBooking.pitchId?.image?.url}
+                        alt="Pitch Image"
+                        width={100}
+                        height={100}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400">Date:</span>{" "}
-                {new Date(viewBooking.date).toLocaleDateString()} at {viewBooking.timeSlot}
-              </div>
-              <div>
-                <span className="text-slate-400">Amount:</span>{" "}
-                {viewBooking.price?.toLocaleString()} {viewBooking.currency}
-              </div>
-              <div>
-                <span className="text-slate-400">Status:</span>{" "}
-                {viewBooking.status}
+
+              <div className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+                <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">
+                  References
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-400">User ID:</span>{" "}
+                    {(viewBooking.userId?._id)?.slice(-4) || "N/A"}
+                  </div>
+                  <div>
+                    <span className="text-slate-400">City ID:</span>{" "}
+                    {(viewBooking.city)?.slice(-4) || "N/A"}
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Sport ID:</span>{" "}
+                    {(viewBooking.sport)?.slice(-4) || "N/A"}
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteBooking} onOpenChange={(open) => !open && setDeleteBooking(null)}>
+      {/* Delete Confirm */}
+      <AlertDialog
+        open={!!deleteBooking}
+        onOpenChange={(open) => !open && setDeleteBooking(null)}
+      >
         <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete booking?</AlertDialogTitle>

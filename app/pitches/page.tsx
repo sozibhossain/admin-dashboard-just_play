@@ -520,45 +520,83 @@ export default function PitchesPage() {
       </Dialog>
 
       <Dialog open={!!viewPitch} onOpenChange={(open) => !open && setViewPitch(null)}>
-        <DialogContent className="bg-slate-900 border-slate-700 text-white">
-          <DialogHeader>
-            <DialogTitle>Pitch Details</DialogTitle>
-          </DialogHeader>
-          {viewPitch && (
-            <div className="space-y-3 text-sm text-slate-300">
-              <div>
-                <span className="text-slate-400">Name:</span> {viewPitch.name}
-              </div>
-              <div>
-                <span className="text-slate-400">Sport:</span>{" "}
-                {viewPitch.sport?.name || "N/A"}
-              </div>
-              <div>
-                <span className="text-slate-400">City:</span>{" "}
-                {viewPitch.city?.name || "N/A"}
-              </div>
-              <div>
-                <span className="text-slate-400">Owner:</span>{" "}
-                {viewPitch.owner?.name || "N/A"}
-              </div>
-              <div>
-                <span className="text-slate-400">Location:</span>{" "}
-                {viewPitch.location || "N/A"}
-              </div>
-              <div>
-                <span className="text-slate-400">Price:</span>{" "}
-                {viewPitch.price?.toLocaleString()} {viewPitch.currency}
-              </div>
-              <div>
-                <span className="text-slate-400">Type:</span> {viewPitch.pitchType}
-              </div>
-              <div>
-                <span className="text-slate-400">Status:</span> {viewPitch.status}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+  <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+    <DialogHeader>
+      <DialogTitle className="text-xl font-bold">Pitch Information</DialogTitle>
+    </DialogHeader>
+
+    {viewPitch && (
+      <div className="space-y-6 pt-2">
+        {/* Pitch Image & Header */}
+        <div className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+          <div className="w-20 h-20 rounded-md overflow-hidden bg-slate-700 shrink-0">
+            {viewPitch.image?.url ? (
+              <img 
+                src={viewPitch.image.url} 
+                alt={viewPitch.name} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">No Image</div>
+            )}
+          </div>
+          <div>
+            <h3 className="text-lg font-bold leading-tight">{viewPitch.name}</h3>
+            <p className="text-sm text-blue-400 capitalize">{viewPitch.pitchType} Pitch</p>
+            <Badge className="mt-2 bg-emerald-500/20 text-emerald-400 border-0 hover:bg-emerald-500/20">
+              {viewPitch.status}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Details Grid */}
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-1">
+            <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">Sport</p>
+            <p className="text-slate-200 flex items-center gap-2 capitalize">
+              {viewPitch.sport?.name || "N/A"}
+            </p>
+          </div>
+          
+          <div className="space-y-1">
+            <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">City</p>
+            <p className="text-slate-200 capitalize">
+              {viewPitch.city?.name || "N/A"}
+            </p>
+          </div>
+
+          <div className="col-span-2 space-y-1">
+            <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">Exact Location</p>
+            <p className="text-slate-200">
+              {viewPitch.location || "N/A"}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">Owner</p>
+            <p className="text-slate-200">
+              {viewPitch.owner?.name || "No Owner Assigned"}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">Rate</p>
+            <p className="text-emerald-400 font-bold text-lg">
+              {viewPitch.price?.toLocaleString()} 
+              <span className="text-xs ml-1 text-slate-400 font-normal">{viewPitch.currency}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Metadata */}
+        <div className="pt-4 border-t border-slate-800 flex justify-between text-[10px] text-slate-500 uppercase tracking-tighter">
+          <span>Added: {new Date(viewPitch.createdAt).toLocaleDateString()}</span>
+          <span>ID: {viewPitch._id.slice(-8)}</span>
+        </div>
+      </div>
+    )}
+  </DialogContent>
+</Dialog>
 
       <AlertDialog open={!!deletePitch} onOpenChange={(open) => !open && setDeletePitch(null)}>
         <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
