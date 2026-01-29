@@ -92,13 +92,13 @@ export default function DashboardPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full border-slate-600 justify-start bg-transparent"
+                  className="w-full border-slate-600 justify-start bg-transparent text-white"
                 >
                   ⚙️ Edit Pricing Rules
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full border-slate-600 justify-start bg-transparent"
+                  className="w-full border-slate-600 justify-start bg-transparent text-white"
                 >
                   🔔 Send Push Notification
                 </Button>

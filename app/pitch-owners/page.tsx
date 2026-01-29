@@ -17,6 +17,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -37,6 +43,7 @@ export default function PitchOwnersPage() {
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // Updated default value
+  const [viewOwner, setViewOwner] = useState<any | null>(null);
 
   const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
   const { data, isLoading } = usePitchOwners(page, limit, filters);
@@ -87,7 +94,7 @@ export default function PitchOwnersPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-slate-800 border-slate-700 text-white">
                   <SelectItem value="all">All Status</SelectItem> {/* Updated value */}
                   <SelectItem value="verified">Verified</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
@@ -194,6 +201,7 @@ export default function PitchOwnersPage() {
                               size="sm"
                               variant="ghost"
                               className="text-blue-400"
+                              onClick={() => setViewOwner(owner)}
                             >
                               View Profile
                             </Button>
@@ -223,7 +231,7 @@ export default function PitchOwnersPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page === 1}
                 onClick={() => setPage(Math.max(1, page - 1))}
               >
@@ -234,7 +242,7 @@ export default function PitchOwnersPage() {
               </div>
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page >= totalPages}
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
               >
@@ -244,6 +252,45 @@ export default function PitchOwnersPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!viewOwner} onOpenChange={(open) => !open && setViewOwner(null)}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Pitch Owner Profile</DialogTitle>
+          </DialogHeader>
+          {viewOwner && (
+            <div className="space-y-3 text-sm text-slate-300">
+              <div>
+                <span className="text-slate-400">Business:</span>{" "}
+                {viewOwner.businessName || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">Owner Name:</span>{" "}
+                {viewOwner.name || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">Phone:</span>{" "}
+                {viewOwner.phone || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">City:</span>{" "}
+                {viewOwner.city?.name || viewOwner.city || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">Status:</span> {viewOwner.status}
+              </div>
+              <div>
+                <span className="text-slate-400">Bookings:</span>{" "}
+                {viewOwner.totalBookings || 0}
+              </div>
+              <div>
+                <span className="text-slate-400">Rating:</span>{" "}
+                {viewOwner.rating ? viewOwner.rating.toFixed(1) : "N/A"}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

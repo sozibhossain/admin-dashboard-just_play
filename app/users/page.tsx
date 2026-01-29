@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUsers, useBanUser, useUnbanUser } from "@/hooks/use-api";
+import { useUsers, useBanUser, useUnbanUser, useDeleteUser } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
@@ -16,6 +16,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -36,11 +52,14 @@ export default function UsersPage() {
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [viewUser, setViewUser] = useState<any | null>(null);
+  const [deleteUser, setDeleteUser] = useState<any | null>(null);
 
   const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
   const { data, isLoading } = useUsers(page, limit, filters);
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
+  const removeUser = useDeleteUser();
 
   const handleBan = (userId: string) => {
     if (confirm("Are you sure you want to ban this user?")) {
@@ -86,7 +105,7 @@ export default function UsersPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-slate-800 border-slate-700 text-white">
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
@@ -185,8 +204,17 @@ export default function UsersPage() {
                               size="sm"
                               variant="ghost"
                               className="text-blue-400"
+                              onClick={() => setViewUser(user)}
                             >
                               View Profile
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
+                              onClick={() => setDeleteUser(user)}
+                            >
+                              Delete
                             </Button>
                           </div>
                         </TableCell>
@@ -214,7 +242,7 @@ export default function UsersPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page === 1}
                 onClick={() => setPage(Math.max(1, page - 1))}
               >
@@ -225,7 +253,7 @@ export default function UsersPage() {
               </div>
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page >= totalPages}
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
               >
@@ -235,6 +263,65 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!viewUser} onOpenChange={(open) => !open && setViewUser(null)}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>User Profile</DialogTitle>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-3 text-sm text-slate-300">
+              <div>
+                <span className="text-slate-400">Name:</span> {viewUser.name}
+              </div>
+              <div>
+                <span className="text-slate-400">Phone:</span> {viewUser.phone}
+              </div>
+              <div>
+                <span className="text-slate-400">City:</span>{" "}
+                {viewUser.city?.name || viewUser.city || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">Status:</span> {viewUser.status}
+              </div>
+              <div>
+                <span className="text-slate-400">Bookings:</span>{" "}
+                {viewUser.totalBookings || 0}
+              </div>
+              <div>
+                <span className="text-slate-400">No-Shows:</span>{" "}
+                {viewUser.noShows || 0}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteUser} onOpenChange={(open) => !open && setDeleteUser(null)}>
+        <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white">
+              No
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (!deleteUser) return;
+                removeUser.mutate(deleteUser._id);
+                setDeleteUser(null);
+              }}
+            >
+              Yes, delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

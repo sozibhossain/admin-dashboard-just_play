@@ -151,6 +151,11 @@ export const bookingApi = {
     const response = await apiClient.post(`/admin/bookings/${id}/confirm`, {});
     return response.data;
   },
+
+  deleteBooking: async (id: string) => {
+    const response = await apiClient.delete(`/admin/bookings/${id}`);
+    return response.data;
+  },
 };
 
 // ==================== User APIs ====================
@@ -199,6 +204,11 @@ export const userApi = {
     const response = await apiClient.get("/admin/users/search", {
       params: { q: query },
     });
+    return response.data;
+  },
+
+  deleteUser: async (id: string) => {
+    const response = await apiClient.delete(`/admin/users/${id}`);
     return response.data;
   },
 };
@@ -446,5 +456,23 @@ export const reportsApi = {
       responseType: "blob",
     });
     return response.data;
+  },
+};
+
+// ==================== Meta APIs ====================
+
+export const metaApi = {
+  getCities: async () => {
+    const response = await apiClient.get("/city");
+    const data = unwrapData(response);
+    const cities = data?.cities ?? data ?? [];
+    return { cities };
+  },
+
+  getSports: async () => {
+    const response = await apiClient.get("/sport");
+    const data = unwrapData(response);
+    const sports = data?.sports ?? data ?? [];
+    return { sports };
   },
 };

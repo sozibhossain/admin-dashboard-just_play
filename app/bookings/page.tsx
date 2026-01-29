@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useBookings, useUpdateBookingStatus, useConfirmBooking } from "@/hooks/use-api";
+import {
+  useBookings,
+  useUpdateBookingStatus,
+  useConfirmBooking,
+  useDeleteBooking,
+} from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
@@ -16,6 +21,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -38,11 +59,14 @@ export default function BookingsPage() {
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [viewBooking, setViewBooking] = useState<any | null>(null);
+  const [deleteBooking, setDeleteBooking] = useState<any | null>(null);
 
   const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
   const { data, isLoading } = useBookings(page, limit, filters);
   const updateStatus = useUpdateBookingStatus();
   const confirmBooking = useConfirmBooking();
+  const removeBooking = useDeleteBooking();
 
   const handleStatusChange = (bookingId: string, newStatus: string) => {
     updateStatus.mutate({ id: bookingId, status: newStatus });
@@ -84,7 +108,7 @@ export default function BookingsPage() {
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-slate-800 border-slate-700 text-white">
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
@@ -206,8 +230,17 @@ export default function BookingsPage() {
                               size="sm"
                               variant="ghost"
                               className="text-blue-400"
+                              onClick={() => setViewBooking(booking)}
                             >
                               View Details
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
+                              onClick={() => setDeleteBooking(booking)}
+                            >
+                              Delete
                             </Button>
                           </div>
                         </TableCell>
@@ -235,7 +268,7 @@ export default function BookingsPage() {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page === 1}
                 onClick={() => setPage(Math.max(1, page - 1))}
               >
@@ -246,7 +279,7 @@ export default function BookingsPage() {
               </div>
               <Button
                 variant="outline"
-                className="border-slate-700 bg-transparent"
+                className="border-slate-700 bg-transparent text-white"
                 disabled={page >= totalPages}
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
               >
@@ -256,6 +289,68 @@ export default function BookingsPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!viewBooking} onOpenChange={(open) => !open && setViewBooking(null)}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+          </DialogHeader>
+          {viewBooking && (
+            <div className="space-y-3 text-sm text-slate-300">
+              <div>
+                <span className="text-slate-400">Booking ID:</span>{" "}
+                {viewBooking.bookingId || viewBooking._id}
+              </div>
+              <div>
+                <span className="text-slate-400">User:</span>{" "}
+                {viewBooking.userId?.name || "N/A"} ({viewBooking.userId?.phone || "N/A"})
+              </div>
+              <div>
+                <span className="text-slate-400">Pitch:</span>{" "}
+                {viewBooking.pitchId?.name || "N/A"}
+              </div>
+              <div>
+                <span className="text-slate-400">Date:</span>{" "}
+                {new Date(viewBooking.date).toLocaleDateString()} at {viewBooking.timeSlot}
+              </div>
+              <div>
+                <span className="text-slate-400">Amount:</span>{" "}
+                {viewBooking.price?.toLocaleString()} {viewBooking.currency}
+              </div>
+              <div>
+                <span className="text-slate-400">Status:</span>{" "}
+                {viewBooking.status}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteBooking} onOpenChange={(open) => !open && setDeleteBooking(null)}>
+        <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete booking?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white">
+              No
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (!deleteBooking) return;
+                removeBooking.mutate(deleteBooking._id);
+                setDeleteBooking(null);
+              }}
+            >
+              Yes, delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

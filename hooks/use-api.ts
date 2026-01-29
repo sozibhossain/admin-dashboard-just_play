@@ -8,6 +8,7 @@ import {
   settingsApi,
   emergencyApi,
   reportsApi,
+  metaApi,
 } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -112,6 +113,21 @@ export const useConfirmBooking = () => {
   });
 };
 
+export const useDeleteBooking = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bookingApi.deleteBooking(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success("Booking deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete booking");
+      console.error(error);
+    },
+  });
+};
+
 // ==================== User Hooks ====================
 
 export const useUsers = (page = 1, limit = 10, filters?: any) => {
@@ -156,6 +172,21 @@ export const useUnbanUser = () => {
     },
     onError: (error) => {
       toast.error("Failed to unban user");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => userApi.deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast.success("User deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete user");
       console.error(error);
     },
   });
@@ -276,6 +307,21 @@ export const useUpdatePitchStatus = () => {
   });
 };
 
+export const useDeletePitch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => pitchApi.deletePitch(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pitches"] });
+      toast.success("Pitch deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete pitch");
+      console.error(error);
+    },
+  });
+};
+
 // ==================== Settings Hooks ====================
 
 export const useSettings = () => {
@@ -360,6 +406,24 @@ export const useRevenueReport = (startDate?: string, endDate?: string) => {
   return useQuery({
     queryKey: ["reports", "revenue", startDate, endDate],
     queryFn: () => reportsApi.getRevenueReport(startDate, endDate),
+    staleTime: 30 * 60 * 1000,
+  });
+};
+
+// ==================== Meta Hooks ====================
+
+export const useCities = () => {
+  return useQuery({
+    queryKey: ["meta", "cities"],
+    queryFn: () => metaApi.getCities(),
+    staleTime: 30 * 60 * 1000,
+  });
+};
+
+export const useSports = () => {
+  return useQuery({
+    queryKey: ["meta", "sports"],
+    queryFn: () => metaApi.getSports(),
     staleTime: 30 * 60 * 1000,
   });
 };
