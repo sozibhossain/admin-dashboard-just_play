@@ -2,7 +2,7 @@ import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL = (
   process.env.NEXT_PUBLIC_SOCKET_URL ||
-  (process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5001/api/v1").replace(
+  (process.env.NEXT_PUBLIC_BASE_URL || "https://backend-just-play-1.onrender.com/api/v1").replace(
     /\/api\/v1\/?$/,
     ""
   )
