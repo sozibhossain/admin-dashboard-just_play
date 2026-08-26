@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useDashboardStats } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { StatsCard } from "@/components/dashboard/stats-card";
@@ -19,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
 
   return (
@@ -87,18 +89,23 @@ export default function DashboardPage() {
                 Quick access to frequent administrative tasks.
               </p>
               <div className="space-y-2">
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 justify-start">
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 justify-start"
+                  onClick={() => router.push("/pitch-owners")}
+                >
                   ✓ Verify New Pitch Owner
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full border-slate-600 justify-start bg-transparent text-white"
+                  onClick={() => router.push("/settings")}
                 >
                   ⚙️ Edit Pricing Rules
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full border-slate-600 justify-start bg-transparent text-white"
+                  onClick={() => router.push("/emergency")}
                 >
                   🔔 Send Push Notification
                 </Button>

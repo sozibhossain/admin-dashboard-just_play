@@ -2,8 +2,21 @@
 
 import React from "react"
 
-import { useState } from "react";
-import { useSettings, useUpdateSettings } from "@/hooks/use-api";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import {
+  useSettings,
+  useUpdateGeneralSettings,
+  useUpdateBusinessSettings,
+  useUpdateSystemSettings,
+  useChangeAdminPassword,
+  useApiKeys,
+  useCreateApiKey,
+  useDeleteApiKey,
+  useBackups,
+  useCreateBackup,
+  useRestoreBackup,
+} from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,17 +28,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   Settings as SettingsIcon,
   Shield,
   Activity,
   Lock,
+  Trash2,
+  DatabaseBackup,
+  RotateCcw,
 } from "lucide-react";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const { data: settings, isLoading } = useSettings();
-  const updateSettings = useUpdateSettings();
+  const updateGeneral = useUpdateGeneralSettings();
+  const updateBusiness = useUpdateBusinessSettings();
+  const updateSystem = useUpdateSystemSettings();
+  const changePassword = useChangeAdminPassword();
 
   const [formData, setFormData] = useState({
     appName: "",
@@ -34,11 +72,98 @@ export default function SettingsPage() {
     platformFee: 5,
     defaultCurrency: "IQD",
     defaultCity: "",
+    sessionTimeoutMinutes: 30,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!settings) return;
+    setFormData({
+      appName: settings.general?.appName ?? "",
+      supportEmail: settings.general?.supportEmail ?? "",
+      supportPhone: settings.general?.supportPhone ?? "",
+      platformFee: settings.business?.platformFeePercent ?? 5,
+      defaultCurrency: settings.business?.defaultCurrency ?? "IQD",
+      defaultCity: settings.business?.defaultCity ?? "",
+      sessionTimeoutMinutes: settings.system?.adminSessionTimeoutMinutes ?? 30,
+    });
+  }, [settings]);
+
+  const handleGeneralSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings.mutate(formData);
+    updateGeneral.mutate({
+      appName: formData.appName,
+      supportEmail: formData.supportEmail,
+      supportPhone: formData.supportPhone,
+    });
+  };
+
+  const handleBusinessSubmit = () => {
+    updateBusiness.mutate({
+      platformFeePercent: formData.platformFee,
+      defaultCurrency: formData.defaultCurrency,
+      defaultCity: formData.defaultCity,
+    });
+  };
+
+  const handleSessionTimeoutSubmit = () => {
+    updateSystem.mutate({
+      adminSessionTimeoutMinutes: formData.sessionTimeoutMinutes,
+    });
+  };
+
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleChangePassword = () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (!session?.user?.id) {
+      toast.error("Missing admin session");
+      return;
+    }
+    changePassword.mutate(
+      { adminId: session.user.id, newPassword },
+      {
+        onSuccess: () => {
+          setPasswordDialogOpen(false);
+          setNewPassword("");
+          setConfirmPassword("");
+        },
+      }
+    );
+  };
+
+  const [apiKeysDialogOpen, setApiKeysDialogOpen] = useState(false);
+  const { data: apiKeys } = useApiKeys();
+  const createApiKey = useCreateApiKey();
+  const deleteApiKey = useDeleteApiKey();
+  const [newKeyName, setNewKeyName] = useState("");
+
+  const handleCreateKey = () => {
+    if (!newKeyName.trim()) {
+      toast.error("Enter a name for the key");
+      return;
+    }
+    createApiKey.mutate(newKeyName.trim(), {
+      onSuccess: () => setNewKeyName(""),
+    });
+  };
+
+  const { data: backupsData } = useBackups();
+  const backups = backupsData?.backups || [];
+  const createBackup = useCreateBackup();
+  const restoreBackup = useRestoreBackup();
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null);
+
+  const handleCreateBackup = () => {
+    createBackup.mutate("Manual backup triggered from admin dashboard");
   };
 
   if (isLoading) {
@@ -77,7 +202,7 @@ export default function SettingsPage() {
             </h3>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleGeneralSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-200 mb-2">
                 App Name
@@ -122,10 +247,10 @@ export default function SettingsPage() {
 
             <Button
               type="submit"
-              disabled={updateSettings.isPending}
+              disabled={updateGeneral.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {updateSettings.isPending ? "Saving..." : "Save Changes"}
+              {updateGeneral.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </form>
         </Card>
@@ -200,8 +325,8 @@ export default function SettingsPage() {
 
             <Button
               type="button"
-              onClick={handleSubmit}
-              disabled={updateSettings.isPending}
+              onClick={handleBusinessSubmit}
+              disabled={updateBusiness.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
               Update Business Rules
@@ -228,6 +353,7 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   className="border-slate-600 bg-transparent"
+                  onClick={() => setPasswordDialogOpen(true)}
                 >
                   <Lock className="w-4 h-4 mr-2" />
                   Change Password
@@ -246,9 +372,45 @@ export default function SettingsPage() {
                 <Button
                   variant="outline"
                   className="border-slate-600 bg-transparent"
+                  onClick={() => setApiKeysDialogOpen(true)}
                 >
                   Manage Keys
                 </Button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-800 rounded-lg border border-slate-700">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-medium text-white">
+                    Admin Session Timeout
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Minutes of inactivity before an admin session expires
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.sessionTimeoutMinutes}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        sessionTimeoutMinutes: parseInt(e.target.value, 10) || 1,
+                      })
+                    }
+                    className="w-24 bg-slate-800 border-slate-700 text-white"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSessionTimeoutSubmit}
+                    disabled={updateSystem.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Save
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -268,15 +430,215 @@ export default function SettingsPage() {
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-300">Version</span>
-              <span className="text-slate-400">v2.1.0 (JustPlay)</span>
+              <span className="text-slate-400">
+                {settings?.system?.version || "N/A"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-slate-300">Last Backup</span>
-              <span className="text-slate-400">Today, 04:00 AM</span>
+              <span className="text-slate-400">
+                {settings?.system?.lastBackupAt
+                  ? new Date(settings.system.lastBackupAt).toLocaleString()
+                  : "Never"}
+              </span>
             </div>
           </div>
         </Card>
+
+        {/* Data Backup & Recovery */}
+        <Card className="p-6 border-slate-700 bg-slate-900">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <DatabaseBackup className="w-5 h-5 text-purple-400" />
+              <h3 className="text-lg font-semibold text-white">
+                Data Backup & Recovery
+              </h3>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleCreateBackup}
+              disabled={createBackup.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {createBackup.isPending ? "Backing up..." : "Create Manual Backup"}
+            </Button>
+          </div>
+
+          <p className="text-xs text-slate-400 mb-4">
+            The system automatically backs up all data at least once per day.
+            Manual backups can be triggered at any time, and any backup can be
+            restored in case of a system failure.
+          </p>
+
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {backups.length === 0 ? (
+              <p className="text-sm text-slate-400">No backups yet.</p>
+            ) : (
+              backups.map((backup: any) => (
+                <div
+                  key={backup._id}
+                  className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-slate-700"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {backup.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {backup.type} &middot;{" "}
+                      {backup.createdAt
+                        ? new Date(backup.createdAt).toLocaleString()
+                        : "N/A"}
+                      {backup.status === "restored" && (
+                        <span className="text-green-400"> &middot; restored</span>
+                      )}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-slate-600 text-slate-300 hover:bg-slate-700 bg-transparent shrink-0"
+                    onClick={() => setRestoreTarget(backup)}
+                    disabled={restoreBackup.isPending}
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    Restore
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
       </div>
+
+      {/* Restore Backup Confirm */}
+      <AlertDialog
+        open={!!restoreTarget}
+        onOpenChange={(open) => !open && setRestoreTarget(null)}
+      >
+        <AlertDialogContent className="bg-slate-900 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore this backup?</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              This will overwrite current data with the contents of{" "}
+              {restoreTarget?.name}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (!restoreTarget) return;
+                restoreBackup.mutate(restoreTarget._id);
+                setRestoreTarget(null);
+              }}
+            >
+              Yes, restore
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Change Admin Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-200 mb-2">
+                New Password
+              </label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-200 mb-2">
+                Confirm New Password
+              </label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleChangePassword}
+              disabled={changePassword.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {changePassword.isPending ? "Changing..." : "Change Password"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* API Keys Dialog */}
+      <Dialog open={apiKeysDialogOpen} onOpenChange={setApiKeysDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle>API Keys</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Key name (e.g. Mobile App)"
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white"
+              />
+              <Button
+                onClick={handleCreateKey}
+                disabled={createApiKey.isPending}
+                className="bg-blue-600 hover:bg-blue-700 shrink-0"
+              >
+                Create
+              </Button>
+            </div>
+
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {(apiKeys || []).length === 0 ? (
+                <p className="text-sm text-slate-400">No API keys yet.</p>
+              ) : (
+                (apiKeys || []).map((key: any) => (
+                  <div
+                    key={key._id}
+                    className="flex items-center justify-between p-3 bg-slate-800 rounded-lg border border-slate-700"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-white">
+                        {key.name}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate font-mono">
+                        {key.key}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent shrink-0"
+                      onClick={() => deleteApiKey.mutate(key._id)}
+                      disabled={deleteApiKey.isPending}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 }

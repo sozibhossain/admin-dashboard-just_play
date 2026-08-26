@@ -96,7 +96,13 @@ export default function PitchesPage() {
   const { data: ownersData } = usePitchOwners(1, 100);
 
   const handleStatusChange = (pitchId: string, newStatus: string) => {
-    updateStatus.mutate({ id: pitchId, status: newStatus });
+    const message =
+      newStatus === "maintenance"
+        ? "Set this pitch to maintenance mode? This will immediately block new bookings."
+        : "Reactivate this pitch for bookings?";
+    if (confirm(message)) {
+      updateStatus.mutate({ id: pitchId, status: newStatus });
+    }
   };
 
   const resetForm = () => {

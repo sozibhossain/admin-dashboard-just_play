@@ -271,7 +271,7 @@ export const pitchOwnerApi = {
     const response = await apiClient.get(
       `/admin/pitch-owners/${id}/stats`
     );
-    return response.data;
+    return unwrapData(response);
   },
 };
 
@@ -311,14 +311,14 @@ export const pitchApi = {
 
   createPitch: async (data: FormData) => {
     const response = await apiClient.post("/admin/pitches", data, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { "Content-Type": undefined },
     });
     return response.data;
   },
 
   updatePitch: async (id: string, data: FormData) => {
     const response = await apiClient.patch(`/admin/pitches/${id}`, data, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { "Content-Type": undefined },
     });
     return response.data;
   },
@@ -341,6 +341,115 @@ export const pitchApi = {
   },
 };
 
+// ==================== Event APIs ====================
+
+export const eventApi = {
+  getEvents: async (page = 1, limit = 10, filters?: any) => {
+    const response = await apiClient.get("/admin/events", {
+      params: { page, limit, ...filters },
+    });
+    const data = unwrapData(response);
+    const events = data?.events ?? data ?? [];
+    return {
+      events,
+      total: data?.total ?? events.length,
+      totalPages: data?.totalPages ?? 1,
+    };
+  },
+
+  getEventById: async (id: string) => {
+    const response = await apiClient.get(`/admin/events/${id}`);
+    return unwrapData(response);
+  },
+
+  createEvent: async (data: FormData) => {
+    const response = await apiClient.post("/admin/events", data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  updateEvent: async (id: string, data: FormData) => {
+    const response = await apiClient.patch(`/admin/events/${id}`, data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  deleteEvent: async (id: string) => {
+    const response = await apiClient.delete(`/admin/events/${id}`);
+    return response.data;
+  },
+};
+
+export const countryApi = {
+  getCountries: async (q?: string) => {
+    const response = await apiClient.get("/admin/cities", {
+      params: q ? { q } : undefined,
+    });
+    const data = unwrapData(response);
+    return { countries: Array.isArray(data) ? data : (data?.cities ?? []) };
+  },
+
+  getCountryById: async (id: string) => {
+    const response = await apiClient.get(`/admin/cities/${id}`);
+    return unwrapData(response);
+  },
+
+  createCountry: async (data: FormData) => {
+    const response = await apiClient.post("/admin/cities", data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  updateCountry: async (id: string, data: FormData) => {
+    const response = await apiClient.patch(`/admin/cities/${id}`, data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  deleteCountry: async (id: string) => {
+    const response = await apiClient.delete(`/admin/cities/${id}`);
+    return response.data;
+  },
+};
+
+export const sportApi = {
+  getSports: async (q?: string) => {
+    const response = await apiClient.get("/admin/sports", {
+      params: q ? { q } : undefined,
+    });
+    const data = unwrapData(response);
+    return { sports: Array.isArray(data) ? data : (data?.sports ?? []) };
+  },
+
+  getSportById: async (id: string) => {
+    const response = await apiClient.get(`/admin/sports/${id}`);
+    return unwrapData(response);
+  },
+
+  createSport: async (data: FormData) => {
+    const response = await apiClient.post("/admin/sports", data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  updateSport: async (id: string, data: FormData) => {
+    const response = await apiClient.patch(`/admin/sports/${id}`, data, {
+      headers: { "Content-Type": undefined },
+    });
+    return response.data;
+  },
+
+  deleteSport: async (id: string) => {
+    const response = await apiClient.delete(`/admin/sports/${id}`);
+    return response.data;
+  },
+};
+
 // ==================== Settings APIs ====================
 
 export const settingsApi = {
@@ -349,69 +458,111 @@ export const settingsApi = {
     return unwrapData(response);
   },
 
-  updateSettings: async (data: any) => {
-    const response = await apiClient.patch("/admin/settings", data);
+  updateGeneral: async (data: {
+    appName?: string;
+    supportEmail?: string;
+    supportPhone?: string;
+  }) => {
+    const response = await apiClient.patch("/admin/settings/general", data);
     return response.data;
   },
 
-  getPlatformFee: async () => {
-    const response = await apiClient.get("/admin/settings/platform-fee");
+  updateBusiness: async (data: {
+    platformFeePercent?: number;
+    defaultCurrency?: string;
+    defaultCity?: string;
+    cancellationWindowHours?: number;
+    lateCancellationAllowed?: boolean;
+    reservationHoldMinutes?: number;
+    bookingReminderMinutes?: number;
+  }) => {
+    const response = await apiClient.patch("/admin/settings/business", data);
     return response.data;
   },
 
-  updatePlatformFee: async (fee: number) => {
+  updateSystemSettings: async (data: {
+    adminSessionTimeoutMinutes?: number;
+    requireTwoFactor?: boolean;
+  }) => {
+    const response = await apiClient.patch("/admin/settings/system", data);
+    return response.data;
+  },
+
+  changeAdminPassword: async (adminId: string, newPassword: string) => {
     const response = await apiClient.patch(
-      "/admin/settings/platform-fee",
-      { fee }
+      "/admin/settings/security/change-password",
+      { adminId, newPassword }
     );
     return response.data;
   },
+};
 
-  getSystemStatus: async () => {
-    const response = await apiClient.get("/admin/settings/system-status");
+// ==================== API Keys ====================
+
+export const apiKeysApi = {
+  getKeys: async () => {
+    const response = await apiClient.get("/admin/settings/api-keys");
+    return unwrapData(response);
+  },
+
+  createKey: async (name: string) => {
+    const response = await apiClient.post("/admin/settings/api-keys", {
+      name,
+    });
     return response.data;
   },
 
-  changeAdminPassword: async (oldPassword: string, newPassword: string) => {
-    const response = await apiClient.post("/admin/settings/change-password", {
-      oldPassword,
-      newPassword,
-    });
+  deleteKey: async (id: string) => {
+    const response = await apiClient.delete(`/admin/settings/api-keys/${id}`);
     return response.data;
+  },
+};
+
+// ==================== Audit Log ====================
+
+export const auditApi = {
+  getLogs: async (page = 1, limit = 50, filters?: any) => {
+    const response = await apiClient.get("/admin/audit-logs", {
+      params: { page, limit, ...filters },
+    });
+    const data = unwrapData(response);
+    const logs = Array.isArray(data) ? data : data?.logs ?? [];
+    return { logs };
   },
 };
 
 // ==================== Emergency APIs ====================
 
 export const emergencyApi = {
-  lockSystem: async (reason?: string) => {
-    const response = await apiClient.post("/admin/emergency/lock-system", {
-      reason,
+  lockSystem: async (message?: string) => {
+    const response = await apiClient.post("/admin/emergency/lock", {
+      locked: true,
+      message,
     });
     return response.data;
   },
 
   unlockSystem: async () => {
-    const response = await apiClient.post("/admin/emergency/unlock-system", {});
-    return response.data;
-  },
-
-  getSystemLockStatus: async () => {
-    const response = await apiClient.get("/admin/emergency/lock-status");
-    return response.data;
-  },
-
-  sendMassNotification: async (message: string, userType?: string) => {
-    const response = await apiClient.post("/admin/emergency/notification", {
-      message,
-      userType,
+    const response = await apiClient.post("/admin/emergency/lock", {
+      locked: false,
     });
     return response.data;
   },
 
-  getNotificationHistory: async (page = 1, limit = 10) => {
-    const response = await apiClient.get("/admin/emergency/notifications", {
-      params: { page, limit },
+  getSystemLockStatus: async () => {
+    const response = await apiClient.get("/admin/emergency/status");
+    return unwrapData(response);
+  },
+
+  sendMassNotification: async (
+    message: string,
+    target: "all" | "players" | "owners" = "all",
+    title?: string
+  ) => {
+    const response = await apiClient.post("/admin/emergency/notify", {
+      title,
+      message,
+      target,
     });
     return response.data;
   },
@@ -440,21 +591,71 @@ export const reportsApi = {
     const response = await apiClient.get("/admin/reports/bookings", {
       params: { startDate, endDate },
     });
-    return response.data;
+    const data = unwrapData(response);
+    const trend = (Array.isArray(data) ? data : []).map((item: any) => ({
+      day: item._id ?? item.day ?? "N/A",
+      count: item.count ?? 0,
+    }));
+    return { trend };
   },
 
   getUserReport: async (startDate?: string, endDate?: string) => {
     const response = await apiClient.get("/admin/reports/users", {
       params: { startDate, endDate },
     });
+    const data = unwrapData(response);
+    const trend = (Array.isArray(data) ? data : []).map((item: any) => ({
+      day: item._id ?? item.day ?? "N/A",
+      count: item.count ?? 0,
+    }));
+    return { trend };
+  },
+
+  getTopPitches: async (range: string = "30", limit = 10) => {
+    const response = await apiClient.get("/admin/reports/top-pitches", {
+      params: { range, limit },
+    });
+    const data = unwrapData(response);
+    return { pitches: Array.isArray(data) ? data : [] };
+  },
+
+  exportReport: async (range: string = "30") => {
+    const response = await apiClient.get("/admin/reports/export-csv", {
+      params: { range },
+      responseType: "blob",
+    });
+    return response.data;
+  },
+};
+
+// ==================== Issues (Player Reports) ====================
+
+export const issuesApi = {
+  getIssues: async (page = 1, limit = 50, filters?: any) => {
+    const response = await apiClient.get("/admin/issues", {
+      params: { page, limit, ...filters },
+    });
+    const data = unwrapData(response);
+    return { issues: Array.isArray(data) ? data : [] };
+  },
+};
+
+// ==================== Backup & Recovery ====================
+
+export const backupApi = {
+  getBackups: async () => {
+    const response = await apiClient.get("/admin/settings/backups");
+    const data = unwrapData(response);
+    return { backups: Array.isArray(data) ? data : [] };
+  },
+
+  createBackup: async (notes?: string) => {
+    const response = await apiClient.post("/admin/settings/backups", { notes });
     return response.data;
   },
 
-  exportReport: async (type: string, format: "csv" | "pdf" = "csv") => {
-    const response = await apiClient.get(`/admin/reports/${type}/export`, {
-      params: { format },
-      responseType: "blob",
-    });
+  restoreBackup: async (id: string) => {
+    const response = await apiClient.post(`/admin/settings/backups/${id}/restore`, {});
     return response.data;
   },
 };

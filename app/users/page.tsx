@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useUsers, useBanUser, useUnbanUser, useDeleteUser } from "@/hooks/use-api";
+import {
+  useUsers,
+  useBanUser,
+  useUnbanUser,
+  useDeleteUser,
+  useUserById,
+} from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
@@ -55,7 +61,10 @@ export default function UsersPage() {
   const [viewUser, setViewUser] = useState<any | null>(null);
   const [deleteUser, setDeleteUser] = useState<any | null>(null);
 
-  const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
+  const filters = {
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(searchQuery.trim() ? { q: searchQuery.trim() } : {}),
+  };
   const { data, isLoading } = useUsers(page, limit, filters);
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
@@ -74,6 +83,7 @@ export default function UsersPage() {
   };
 
   const totalPages = data?.totalPages || 1;
+  const { data: userDetail } = useUserById(viewUser?._id);
 
   return (
     <AdminLayout>
@@ -286,12 +296,30 @@ export default function UsersPage() {
               </div>
               <div>
                 <span className="text-slate-400">Bookings:</span>{" "}
-                {viewUser.totalBookings || 0}
+                {userDetail?.stats?.bookings ?? viewUser.totalBookings ?? 0}
               </div>
               <div>
                 <span className="text-slate-400">No-Shows:</span>{" "}
-                {viewUser.noShows || 0}
+                {userDetail?.stats?.noshows ?? viewUser.noShows ?? 0}
               </div>
+              <div>
+                <span className="text-slate-400">Cancellations:</span>{" "}
+                {userDetail?.stats?.cancellations ?? 0}
+              </div>
+              {userDetail?.bookingHistory?.length > 0 && (
+                <div>
+                  <span className="text-slate-400">Recent Bookings:</span>
+                  <ul className="mt-1 space-y-1">
+                    {userDetail.bookingHistory.map((b: any) => (
+                      <li key={b._id} className="text-slate-300 text-xs">
+                        {b.pitch?.name || "N/A"} —{" "}
+                        {b.date ? new Date(b.date).toLocaleDateString() : ""}{" "}
+                        {b.timeSlot} ({b.status})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>

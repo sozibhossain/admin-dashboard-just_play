@@ -14,7 +14,7 @@ import Link from "next/link";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: "", phone: "" });
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,8 +23,8 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-        name: formData.name,
-        phone: formData.phone,
+        username: formData.username,
+        password: formData.password,
         redirect: false,
       });
 
@@ -63,14 +63,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-200 mb-2">
-                Name
+                Username
               </label>
               <Input
                 type="text"
-                placeholder="Enter your name"
-                value={formData.name}
+                placeholder="Enter your username"
+                value={formData.username}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData({ ...formData, username: e.target.value })
                 }
                 disabled={isLoading}
                 className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
@@ -79,14 +79,14 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-200 mb-2">
-                Phone
+                Password
               </label>
               <Input
-                type="tel"
-                placeholder="Enter your phone number"
-                value={formData.phone}
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({ ...formData, password: e.target.value })
                 }
                 disabled={isLoading}
                 className="bg-slate-700 border-slate-600 text-white placeholder-slate-400"
@@ -116,11 +116,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-slate-700">
-            <p className="text-xs text-slate-400 text-center">
-              Demo credentials: Use any name and phone number
-            </p>
-          </div>
         </div>
       </Card>
     </div>

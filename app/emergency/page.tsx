@@ -1,23 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { useLockSystem, useUnlockSystem, useSendNotification } from "@/hooks/use-api";
+import {
+  useLockSystem,
+  useUnlockSystem,
+  useSendNotification,
+  useSystemLockStatus,
+} from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, Lock, Bell } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { AlertTriangle, Lock, Bell, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function EmergencyPage() {
   const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationTarget, setNotificationTarget] = useState<
+    "all" | "players" | "owners"
+  >("all");
+  const { data: lockStatus } = useSystemLockStatus();
   const lockSystem = useLockSystem();
   const unlockSystem = useUnlockSystem();
   const sendNotification = useSendNotification();
 
+  const isLocked = !!lockStatus?.locked;
+
   const handleLockSystem = () => {
     if (confirm("Are you sure? This will prevent ALL new bookings across the entire platform.")) {
-      lockSystem.mutate();
+      lockSystem.mutate("Locked by admin for maintenance");
     }
   };
 
@@ -32,6 +50,7 @@ export default function EmergencyPage() {
     }
     sendNotification.mutate({
       message: notificationMessage,
+      target: notificationTarget,
     });
     setNotificationMessage("");
   };
@@ -49,6 +68,37 @@ export default function EmergencyPage() {
             Critical platform management tools. Use with caution.
           </p>
         </div>
+
+        {/* Current Status Banner */}
+        <Card
+          className={`p-4 border-2 ${
+            isLocked
+              ? "border-red-500/50 bg-red-500/10"
+              : "border-green-500/30 bg-green-500/10"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {isLocked ? (
+              <Lock className="w-5 h-5 text-red-400" />
+            ) : (
+              <CheckCircle2 className="w-5 h-5 text-green-400" />
+            )}
+            <div>
+              <p
+                className={`font-medium ${isLocked ? "text-red-300" : "text-green-300"}`}
+              >
+                {isLocked
+                  ? `System is currently LOCKED${lockStatus?.lockedAt ? ` since ${new Date(lockStatus.lockedAt).toLocaleString()}` : ""}`
+                  : "System is operational"}
+              </p>
+              {isLocked && lockStatus?.message && (
+                <p className="text-sm text-red-200 mt-1">
+                  {lockStatus.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
 
         {/* System Lockdown */}
         <Card className="p-6 border-red-500/30 bg-red-500/10 border-2">
@@ -70,7 +120,7 @@ export default function EmergencyPage() {
             <div className="flex gap-2">
               <Button
                 onClick={handleLockSystem}
-                disabled={lockSystem.isPending}
+                disabled={lockSystem.isPending || isLocked}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <Lock className="w-4 h-4 mr-2" />
@@ -78,7 +128,7 @@ export default function EmergencyPage() {
               </Button>
               <Button
                 onClick={handleUnlockSystem}
-                disabled={unlockSystem.isPending}
+                disabled={unlockSystem.isPending || !isLocked}
                 variant="outline"
                 className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
               >
@@ -97,10 +147,31 @@ export default function EmergencyPage() {
                 Mass Notification
               </h3>
               <p className="text-sm text-slate-400 mb-4">
-                Send an alert to all active app users.
+                Send an alert to users across the platform.
               </p>
 
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-200 mb-2">
+                    Audience
+                  </label>
+                  <Select
+                    value={notificationTarget}
+                    onValueChange={(v: "all" | "players" | "owners") =>
+                      setNotificationTarget(v)
+                    }
+                  >
+                    <SelectTrigger className="w-48 bg-slate-800 border-slate-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="players">Players Only</SelectItem>
+                      <SelectItem value="owners">Pitch Owners Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-slate-200 mb-2">
                     Message
@@ -152,11 +223,7 @@ export default function EmergencyPage() {
             </div>
             <div className="flex gap-3">
               <span className="text-slate-400">Mass Notification:</span>
-              <span className="text-slate-300">Sends push notification to all users</span>
-            </div>
-            <div className="flex gap-3">
-              <span className="text-slate-400">Estimated Impact:</span>
-              <span className="text-slate-300">Affects all 10,000+ active users</span>
+              <span className="text-slate-300">Sends push notification to selected audience</span>
             </div>
           </div>
         </Card>

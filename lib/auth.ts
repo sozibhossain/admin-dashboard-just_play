@@ -8,12 +8,12 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        phone: { label: "Phone", type: "text" },
-        name: { label: "Name", type: "text" },
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.phone || !credentials?.name) {
-          throw new Error("Phone and name are required");
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error("Username and password are required");
         }
 
         try {
@@ -23,8 +23,8 @@ export const authOptions: NextAuthOptions = {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              phone: credentials.phone,
-              name: credentials.name,
+              username: credentials.username,
+              password: credentials.password,
             }),
           });
 
@@ -45,8 +45,8 @@ export const authOptions: NextAuthOptions = {
 
           return {
             id: payload?._id ?? userData?._id ?? "",
-            name: userData?.name ?? credentials.name,
-            email: userData?.phone ?? userData?.email ?? credentials.phone,
+            name: userData?.name ?? userData?.username ?? credentials.username,
+            email: userData?.phone ?? userData?.email ?? "",
             image: userData?.avatar?.url ?? userData?.avatar ?? "",
             accessToken,
             refreshToken,

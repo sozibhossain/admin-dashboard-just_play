@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { usePitchOwners, useVerifyOwner, useSuspendOwner } from "@/hooks/use-api";
+import {
+  usePitchOwners,
+  useVerifyOwner,
+  useSuspendOwner,
+  useRejectOwner,
+  useOwnerStats,
+} from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
@@ -45,10 +51,14 @@ export default function PitchOwnersPage() {
   const [statusFilter, setStatusFilter] = useState("all"); // Updated default value
   const [viewOwner, setViewOwner] = useState<any | null>(null);
 
-  const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
+  const filters = {
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(searchQuery.trim() ? { q: searchQuery.trim() } : {}),
+  };
   const { data, isLoading } = usePitchOwners(page, limit, filters);
   const verifyOwner = useVerifyOwner();
   const suspendOwner = useSuspendOwner();
+  const rejectOwner = useRejectOwner();
 
   const handleVerify = (ownerId: string) => {
     if (confirm("Verify this pitch owner?")) {
@@ -61,6 +71,14 @@ export default function PitchOwnersPage() {
       suspendOwner.mutate({ id: ownerId, reason: "Admin action" });
     }
   };
+
+  const handleReject = (ownerId: string) => {
+    if (confirm("Reject this pitch owner application?")) {
+      rejectOwner.mutate({ id: ownerId, reason: "Admin action" });
+    }
+  };
+
+  const { data: ownerStats } = useOwnerStats(viewOwner?._id);
 
   const totalPages = data?.totalPages || 1;
 
@@ -180,6 +198,8 @@ export default function PitchOwnersPage() {
                                   size="sm"
                                   variant="outline"
                                   className="border-red-600 text-red-400 hover:bg-red-600/10 bg-transparent"
+                                  onClick={() => handleReject(owner._id)}
+                                  disabled={rejectOwner.isPending}
                                 >
                                   Reject
                                 </Button>
@@ -281,12 +301,45 @@ export default function PitchOwnersPage() {
               </div>
               <div>
                 <span className="text-slate-400">Bookings:</span>{" "}
-                {viewOwner.totalBookings || 0}
+                {ownerStats?.bookings ?? viewOwner.totalBookings ?? 0}
               </div>
               <div>
                 <span className="text-slate-400">Rating:</span>{" "}
                 {viewOwner.rating ? viewOwner.rating.toFixed(1) : "N/A"}
               </div>
+              {ownerStats && (
+                <>
+                  <div>
+                    <span className="text-slate-400">Revenue:</span>{" "}
+                    {ownerStats.revenue?.toLocaleString?.() ?? 0}{" "}
+                    {ownerStats.currency || "IQD"}
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Acceptance Rate:</span>{" "}
+                    {ownerStats.acceptanceRate ?? 0}%
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Cancellations:</span>{" "}
+                    {ownerStats.cancellations ?? 0}
+                  </div>
+                  <div>
+                    <span className="text-slate-400">No-Shows:</span>{" "}
+                    {ownerStats.noshows ?? 0}
+                  </div>
+                  <div>
+                    <span className="text-slate-400">
+                      Pitches ({ownerStats.totalPitches ?? 0}):
+                    </span>
+                    <ul className="mt-1 space-y-1">
+                      {(ownerStats.pitches || []).map((p: any) => (
+                        <li key={p._id} className="text-slate-300 text-xs">
+                          {p.name} — {p.status} / {p.bookingAvailability}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </DialogContent>

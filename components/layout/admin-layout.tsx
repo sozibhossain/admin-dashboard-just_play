@@ -9,6 +9,7 @@ import { signOut, useSession } from "next-auth/react";
 import {
   BarChart3,
   Calendar,
+  CalendarDays,
   Users,
   Building2,
   MapPin,
@@ -18,9 +19,15 @@ import {
   Menu,
   X,
   Bell,
+  ScrollText,
+  Flag,
+  Globe,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAdminSocket } from "@/hooks/use-admin-socket";
+import { disconnectSocket } from "@/lib/socket";
 
 const navigation = [
   {
@@ -36,12 +43,17 @@ const navigation = [
       { name: "Users (Players)", href: "/users", icon: Users },
       { name: "Pitch Owners", href: "/pitch-owners", icon: Building2 },
       { name: "Pitches", href: "/pitches", icon: MapPin },
+      { name: "Events", href: "/events", icon: CalendarDays },
+      { name: "Countries", href: "/countries", icon: Globe },
+      { name: "Sports", href: "/sports", icon: Trophy },
     ],
   },
   {
     category: "ADMIN",
     items: [
       { name: "Reports", href: "/reports", icon: BarChart3 },
+      { name: "Player Reports", href: "/issues", icon: Flag },
+      { name: "Audit Log", href: "/audit-log", icon: ScrollText },
       { name: "Emergency", href: "/emergency", icon: AlertTriangle },
       { name: "Settings", href: "/settings", icon: Settings },
     ],
@@ -54,8 +66,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { data: session } = useSession();
 
+  useAdminSocket();
+
   const handleLogout = async () => {
     try {
+      disconnectSocket();
       await signOut({ redirect: false });
       toast.success("Logged out successfully");
       router.push("/auth/login");

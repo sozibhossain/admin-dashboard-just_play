@@ -5,10 +5,17 @@ import {
   userApi,
   pitchOwnerApi,
   pitchApi,
+  eventApi,
+  countryApi,
+  sportApi,
   settingsApi,
+  apiKeysApi,
+  auditApi,
   emergencyApi,
   reportsApi,
   metaApi,
+  issuesApi,
+  backupApi,
 } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -242,6 +249,30 @@ export const useSuspendOwner = () => {
   });
 };
 
+export const useRejectOwner = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      pitchOwnerApi.rejectOwner(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pitch-owners"] });
+      toast.success("Owner rejected");
+    },
+    onError: (error) => {
+      toast.error("Failed to reject owner");
+      console.error(error);
+    },
+  });
+};
+
+export const useOwnerStats = (id: string) => {
+  return useQuery({
+    queryKey: ["pitch-owners", id, "stats"],
+    queryFn: () => pitchOwnerApi.getOwnerStats(id),
+    enabled: !!id,
+  });
+};
+
 // ==================== Pitch Hooks ====================
 
 export const usePitches = (page = 1, limit = 10, filters?: any) => {
@@ -322,6 +353,182 @@ export const useDeletePitch = () => {
   });
 };
 
+// ==================== Event Hooks ====================
+
+export const useEvents = (page = 1, limit = 10, filters?: any) => {
+  return useQuery({
+    queryKey: ["events", page, limit, filters],
+    queryFn: () => eventApi.getEvents(page, limit, filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useEventById = (id: string) => {
+  return useQuery({
+    queryKey: ["event", id],
+    queryFn: () => eventApi.getEventById(id),
+    enabled: !!id,
+  });
+};
+
+export const useCreateEvent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => eventApi.createEvent(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event created successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to create event");
+      console.error(error);
+    },
+  });
+};
+
+export const useUpdateEvent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      eventApi.updateEvent(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update event");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeleteEvent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => eventApi.deleteEvent(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Event deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete event");
+      console.error(error);
+    },
+  });
+};
+
+// ==================== Country Hooks ====================
+
+export const useCountries = (q?: string) => {
+  return useQuery({
+    queryKey: ["countries", q],
+    queryFn: () => countryApi.getCountries(q),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCreateCountry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => countryApi.createCountry(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] });
+      toast.success("Country created successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to create country");
+      console.error(error);
+    },
+  });
+};
+
+export const useUpdateCountry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      countryApi.updateCountry(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] });
+      toast.success("Country updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update country");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeleteCountry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => countryApi.deleteCountry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["countries"] });
+      toast.success("Country deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete country");
+      console.error(error);
+    },
+  });
+};
+
+// ==================== Sport Admin Hooks ====================
+
+export const useSportsAdmin = (q?: string) => {
+  return useQuery({
+    queryKey: ["sports-admin", q],
+    queryFn: () => sportApi.getSports(q),
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
+export const useCreateSport = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => sportApi.createSport(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sports-admin"] });
+      toast.success("Sport created successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to create sport");
+      console.error(error);
+    },
+  });
+};
+
+export const useUpdateSport = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FormData }) =>
+      sportApi.updateSport(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sports-admin"] });
+      toast.success("Sport updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update sport");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeleteSport = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => sportApi.deleteSport(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sports-admin"] });
+      toast.success("Sport deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete sport");
+      console.error(error);
+    },
+  });
+};
+
 // ==================== Settings Hooks ====================
 
 export const useSettings = () => {
@@ -332,10 +539,14 @@ export const useSettings = () => {
   });
 };
 
-export const useUpdateSettings = () => {
+export const useUpdateGeneralSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => settingsApi.updateSettings(data),
+    mutationFn: (data: {
+      appName?: string;
+      supportEmail?: string;
+      supportPhone?: string;
+    }) => settingsApi.updateGeneral(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       toast.success("Settings updated successfully");
@@ -347,14 +558,125 @@ export const useUpdateSettings = () => {
   });
 };
 
+export const useUpdateBusinessSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => settingsApi.updateBusiness(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Business rules updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update business rules");
+      console.error(error);
+    },
+  });
+};
+
+export const useUpdateSystemSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      adminSessionTimeoutMinutes?: number;
+      requireTwoFactor?: boolean;
+    }) => settingsApi.updateSystemSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("System settings updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update system settings");
+      console.error(error);
+    },
+  });
+};
+
+export const useChangeAdminPassword = () => {
+  return useMutation({
+    mutationFn: ({
+      adminId,
+      newPassword,
+    }: {
+      adminId: string;
+      newPassword: string;
+    }) => settingsApi.changeAdminPassword(adminId, newPassword),
+    onSuccess: () => {
+      toast.success("Password changed successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to change password");
+      console.error(error);
+    },
+  });
+};
+
+// ==================== API Key Hooks ====================
+
+export const useApiKeys = () => {
+  return useQuery({
+    queryKey: ["api-keys"],
+    queryFn: () => apiKeysApi.getKeys(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCreateApiKey = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => apiKeysApi.createKey(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("API key created");
+    },
+    onError: (error) => {
+      toast.error("Failed to create API key");
+      console.error(error);
+    },
+  });
+};
+
+export const useDeleteApiKey = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiKeysApi.deleteKey(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("API key deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete API key");
+      console.error(error);
+    },
+  });
+};
+
+// ==================== Audit Log Hooks ====================
+
+export const useAuditLogs = (page = 1, limit = 50, filters?: any) => {
+  return useQuery({
+    queryKey: ["audit-logs", page, limit, filters],
+    queryFn: () => auditApi.getLogs(page, limit, filters),
+    staleTime: 60 * 1000,
+  });
+};
+
 // ==================== Emergency Hooks ====================
+
+export const useSystemLockStatus = () => {
+  return useQuery({
+    queryKey: ["emergency", "status"],
+    queryFn: () => emergencyApi.getSystemLockStatus(),
+    staleTime: 30 * 1000,
+  });
+};
 
 export const useLockSystem = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (reason?: string) => emergencyApi.lockSystem(reason),
+    mutationFn: (message?: string) => emergencyApi.lockSystem(message),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
+      queryClient.invalidateQueries({ queryKey: ["emergency"] });
       toast.success("System locked");
     },
     onError: (error) => {
@@ -370,6 +692,7 @@ export const useUnlockSystem = () => {
     mutationFn: () => emergencyApi.unlockSystem(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
+      queryClient.invalidateQueries({ queryKey: ["emergency"] });
       toast.success("System unlocked");
     },
     onError: (error) => {
@@ -380,17 +703,17 @@ export const useUnlockSystem = () => {
 };
 
 export const useSendNotification = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       message,
-      userType,
+      target,
+      title,
     }: {
       message: string;
-      userType?: string;
-    }) => emergencyApi.sendMassNotification(message, userType),
+      target?: "all" | "players" | "owners";
+      title?: string;
+    }) => emergencyApi.sendMassNotification(message, target, title),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Notification sent successfully");
     },
     onError: (error) => {
@@ -407,6 +730,73 @@ export const useRevenueReport = (startDate?: string, endDate?: string) => {
     queryKey: ["reports", "revenue", startDate, endDate],
     queryFn: () => reportsApi.getRevenueReport(startDate, endDate),
     staleTime: 30 * 60 * 1000,
+  });
+};
+
+export const useBookingReport = (startDate?: string, endDate?: string) => {
+  return useQuery({
+    queryKey: ["reports", "bookings", startDate, endDate],
+    queryFn: () => reportsApi.getBookingReport(startDate, endDate),
+    staleTime: 30 * 60 * 1000,
+  });
+};
+
+export const useReportsTopPitches = (range = "30", limit = 10) => {
+  return useQuery({
+    queryKey: ["reports", "top-pitches", range, limit],
+    queryFn: () => reportsApi.getTopPitches(range, limit),
+    staleTime: 30 * 60 * 1000,
+  });
+};
+
+// ==================== Issues Hooks ====================
+
+export const useIssues = (page = 1, limit = 50, filters?: any) => {
+  return useQuery({
+    queryKey: ["issues", page, limit, filters],
+    queryFn: () => issuesApi.getIssues(page, limit, filters),
+    staleTime: 60 * 1000,
+  });
+};
+
+// ==================== Backup & Recovery Hooks ====================
+
+export const useBackups = () => {
+  return useQuery({
+    queryKey: ["backups"],
+    queryFn: () => backupApi.getBackups(),
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useCreateBackup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (notes?: string) => backupApi.createBackup(notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["backups"] });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Backup created");
+    },
+    onError: (error) => {
+      toast.error("Failed to create backup");
+      console.error(error);
+    },
+  });
+};
+
+export const useRestoreBackup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => backupApi.restoreBackup(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["backups"] });
+      toast.success("Backup restored successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to restore backup");
+      console.error(error);
+    },
   });
 };
 

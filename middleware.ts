@@ -26,5 +26,8 @@ export const config = {
     "/pitches/:path*",
     "/settings/:path*",
     "/emergency/:path*",
+    "/reports/:path*",
+    "/audit-log/:path*",
+    "/issues/:path*",
   ],
 };

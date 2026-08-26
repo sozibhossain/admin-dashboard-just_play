@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   useBookings,
   useUpdateBookingStatus,
@@ -51,9 +51,6 @@ import {
   XCircle,
   Clock,
   MapPin,
-  Calendar,
-  User,
-  CreditCard,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -73,10 +70,11 @@ export default function BookingsPage() {
   const [viewBooking, setViewBooking] = useState<any | null>(null);
   const [deleteBooking, setDeleteBooking] = useState<any | null>(null);
 
-  const filters = statusFilter !== "all" ? { status: statusFilter } : undefined;
+  const filters = {
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+    ...(searchQuery.trim() ? { q: searchQuery.trim() } : {}),
+  };
 
-  // If your API supports searching, pass it here (recommended):
-  // const { data, isLoading } = useBookings(page, limit, { ...filters, q: searchQuery });
   const { data, isLoading } = useBookings(page, limit, filters);
 
   const updateStatus = useUpdateBookingStatus();
@@ -84,25 +82,19 @@ export default function BookingsPage() {
   const removeBooking = useDeleteBooking();
 
   const handleStatusChange = (bookingId: string, newStatus: string) => {
-    updateStatus.mutate({ id: bookingId, status: newStatus });
+    if (confirm(`Change this booking's status to "${newStatus}"?`)) {
+      updateStatus.mutate({ id: bookingId, status: newStatus });
+    }
   };
 
   const handleConfirm = (bookingId: string) => {
-    confirmBooking.mutate(bookingId);
+    if (confirm("Confirm this booking?")) {
+      confirmBooking.mutate(bookingId);
+    }
   };
 
   const totalPages = data?.totalPages || 1;
-
-  // Client-side search fallback (if API doesn’t support search yet)
-  const bookings = useMemo(() => {
-    const list = data?.bookings || [];
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((b: any) => {
-      const id = (b.bookingId || b._id || "").toString().toLowerCase();
-      return id.includes(q);
-    });
-  }, [data?.bookings, searchQuery]);
+  const bookings = data?.bookings || [];
 
   return (
     <AdminLayout>
@@ -367,12 +359,14 @@ export default function BookingsPage() {
             <div className="space-y-6 pt-2">
               {/* Pitch Visual Info */}
               <div className="flex items-center gap-4 p-3 bg-slate-800/50 rounded-lg">
-                <img
+                <Image
                   src={
                     viewBooking.pitchId?.image?.url ||
                     viewBooking.pitchId?.imageUrl ||
                     "/placeholder.png"
                   }
+                  width={64}
+                  height={64}
                   className="w-16 h-16 rounded object-cover border border-slate-700"
                   alt="Pitch"
                 />
@@ -500,7 +494,11 @@ export default function BookingsPage() {
                     <div>
                       <span className="text-slate-400">Image:</span>{" "}
                       <Image
-                        src={viewBooking.pitchId?.image?.url}
+                        src={
+                          viewBooking.pitchId?.image?.url ||
+                          viewBooking.pitchId?.imageUrl ||
+                          "/placeholder.png"
+                        }
                         alt="Pitch Image"
                         width={100}
                         height={100}
