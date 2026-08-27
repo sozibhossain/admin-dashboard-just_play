@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL?.replace(/\/+$/, "");
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,41 +16,53 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Username and password are required");
         }
 
+        if (!BASE_URL) {
+          throw new Error("Authentication service is not configured");
+        }
+
         try {
-          const response = await fetch(`${BASE_URL}/auth/login`, {
+          const response = await fetch(`${BASE_URL}/auth/admin-login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
+            cache: "no-store",
             body: JSON.stringify({
               username: credentials.username,
               password: credentials.password,
             }),
           });
 
+          const result = await response.json().catch(() => null);
+
           if (!response.ok) {
-            throw new Error("Login failed");
+            throw new Error(result?.message || "Login failed");
           }
 
-          const result = await response.json();
           const payload = result?.data ?? result; // API returns { success, data: {...} }
           const userData = payload?.user ?? payload;
 
           const accessToken = payload?.accessToken;
           const refreshToken = payload?.refreshToken;
+          const role = payload?.role ?? userData?.role;
+          const id = payload?._id ?? userData?._id;
 
-          if (!accessToken || !refreshToken) {
+          if (!id || !accessToken || !refreshToken) {
             throw new Error("Missing tokens in login response");
           }
 
+          if (role !== "admin") {
+            throw new Error("Admin access required");
+          }
+
           return {
-            id: payload?._id ?? userData?._id ?? "",
+            id,
             name: userData?.name ?? userData?.username ?? credentials.username,
             email: userData?.phone ?? userData?.email ?? "",
             image: userData?.avatar?.url ?? userData?.avatar ?? "",
             accessToken,
             refreshToken,
-            role: payload?.role ?? userData?.role ?? "admin",
+            role,
           };
         } catch (error) {
           console.error("Auth error:", error);
@@ -87,7 +99,5 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
-  jwt: {
-    secret: process.env.NEXTAUTH_SECRET || "your-secret-key",
-  },
+  secret: process.env.NEXTAUTH_SECRET,
 };

@@ -1,8 +1,6 @@
 "use client";
 
-import React from "react"
-
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -17,7 +15,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -63,11 +61,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-200 mb-2">
-                Username
+                Email, username, or phone
               </label>
               <Input
                 type="text"
-                placeholder="Enter your username"
+                name="username"
+                autoComplete="username"
+                required
+                placeholder="Enter your email, username, or phone"
                 value={formData.username}
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
@@ -83,6 +84,9 @@ export default function LoginPage() {
               </label>
               <Input
                 type="password"
+                name="password"
+                autoComplete="current-password"
+                required
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={(e) =>
