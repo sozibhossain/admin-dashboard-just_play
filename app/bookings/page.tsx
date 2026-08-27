@@ -345,7 +345,7 @@ export default function BookingsPage() {
         )}
       </div>
 
-      {/* Detail Modal (single) */}
+      {/* Detail Modal (single)//////////////////////////////////////// */}
       <Dialog
         open={!!viewBooking}
         onOpenChange={(open) => !open && setViewBooking(null)}
