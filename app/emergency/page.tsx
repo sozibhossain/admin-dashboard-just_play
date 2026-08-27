@@ -8,6 +8,7 @@ import {
   useSystemLockStatus,
 } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
+import { useConfirmation } from "@/components/confirmation-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,24 +31,48 @@ export default function EmergencyPage() {
   const lockSystem = useLockSystem();
   const unlockSystem = useUnlockSystem();
   const sendNotification = useSendNotification();
+  const confirmAction = useConfirmation();
 
   const isLocked = !!lockStatus?.locked;
 
-  const handleLockSystem = () => {
-    if (confirm("Are you sure? This will prevent ALL new bookings across the entire platform.")) {
-      lockSystem.mutate("Locked by admin for maintenance");
-    }
+  const handleLockSystem = async () => {
+    const confirmed = await confirmAction({
+      title: "Lock the entire platform?",
+      description:
+        "All new bookings will stop immediately. Existing bookings will remain visible.",
+      confirmLabel: "Lock platform",
+      tone: "danger",
+    });
+
+    if (confirmed) lockSystem.mutate("Locked by admin for maintenance");
   };
 
-  const handleUnlockSystem = () => {
-    unlockSystem.mutate();
+  const handleUnlockSystem = async () => {
+    const confirmed = await confirmAction({
+      title: "Restore platform bookings?",
+      description: "Players will be able to create new bookings again immediately.",
+      confirmLabel: "Unlock platform",
+      tone: "success",
+    });
+
+    if (confirmed) unlockSystem.mutate();
   };
 
-  const handleSendAlert = () => {
+  const handleSendAlert = async () => {
     if (!notificationMessage.trim()) {
       toast.error("Please enter a message");
       return;
     }
+
+    const confirmed = await confirmAction({
+      title: "Send this notification?",
+      description: `This alert will be sent to ${notificationTarget === "all" ? "all users" : notificationTarget}.`,
+      confirmLabel: "Send notification",
+      tone: "primary",
+    });
+
+    if (!confirmed) return;
+
     sendNotification.mutate({
       message: notificationMessage,
       target: notificationTarget,
@@ -57,10 +82,10 @@ export default function EmergencyPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="max-w-4xl space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
             <AlertTriangle className="w-8 h-8 text-red-500" />
             Emergency Controls
           </h1>
@@ -102,7 +127,7 @@ export default function EmergencyPage() {
 
         {/* System Lockdown */}
         <Card className="p-6 border-red-500/30 bg-red-500/10 border-2">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
             <div className="flex-1">
               <h3 className="text-xl font-semibold text-white mb-2 flex items-center gap-2">
                 <Lock className="w-5 h-5 text-red-500" />
@@ -117,7 +142,7 @@ export default function EmergencyPage() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 onClick={handleLockSystem}
                 disabled={lockSystem.isPending || isLocked}
@@ -161,7 +186,7 @@ export default function EmergencyPage() {
                       setNotificationTarget(v)
                     }
                   >
-                    <SelectTrigger className="w-48 bg-slate-800 border-slate-700 text-white">
+                    <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white sm:w-48">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700 text-white">

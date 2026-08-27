@@ -8,6 +8,7 @@ import {
   useDeleteBooking,
 } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
+import { useConfirmation } from "@/components/confirmation-provider";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
   Table,
@@ -62,6 +63,17 @@ const statusColors: Record<string, { bg: string; text: string }> = {
   noshow: { bg: "bg-gray-500/20", text: "text-gray-400" },
 };
 
+const getReferenceSuffix = (reference: unknown) => {
+  if (!reference) return "N/A";
+
+  const id =
+    typeof reference === "object" && "_id" in reference
+      ? (reference as { _id?: unknown })._id
+      : reference;
+
+  return typeof id === "string" && id ? id.slice(-4) : "N/A";
+};
+
 export default function BookingsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
@@ -80,17 +92,32 @@ export default function BookingsPage() {
   const updateStatus = useUpdateBookingStatus();
   const confirmBooking = useConfirmBooking();
   const removeBooking = useDeleteBooking();
+  const confirmAction = useConfirmation();
 
-  const handleStatusChange = (bookingId: string, newStatus: string) => {
-    if (confirm(`Change this booking's status to "${newStatus}"?`)) {
-      updateStatus.mutate({ id: bookingId, status: newStatus });
-    }
+  const handleStatusChange = async (bookingId: string, newStatus: string) => {
+    const isCancellation = newStatus === "cancelled";
+    const confirmed = await confirmAction({
+      title: isCancellation ? "Cancel this booking?" : `Mark as ${newStatus}?`,
+      description: isCancellation
+        ? "This booking will be cancelled and removed from the active schedule."
+        : `The booking status will change to ${newStatus}.`,
+      confirmLabel: isCancellation ? "Cancel booking" : "Update status",
+      tone: isCancellation ? "danger" : "success",
+    });
+
+    if (confirmed) updateStatus.mutate({ id: bookingId, status: newStatus });
   };
 
-  const handleConfirm = (bookingId: string) => {
-    if (confirm("Confirm this booking?")) {
-      confirmBooking.mutate(bookingId);
-    }
+  const handleConfirm = async (bookingId: string) => {
+    const confirmed = await confirmAction({
+      title: "Confirm this booking?",
+      description:
+        "The booking will be approved and shown as confirmed to the player and pitch owner.",
+      confirmLabel: "Confirm booking",
+      tone: "success",
+    });
+
+    if (confirmed) confirmBooking.mutate(bookingId);
   };
 
   const totalPages = data?.totalPages || 1;
@@ -98,10 +125,10 @@ export default function BookingsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">Booking Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Booking Management</h1>
           <p className="text-slate-400 mt-1">Manage and monitor all bookings</p>
         </div>
 
@@ -121,7 +148,7 @@ export default function BookingsPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Select
                 value={statusFilter}
                 onValueChange={(v) => {
@@ -515,15 +542,15 @@ export default function BookingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-slate-400">User ID:</span>{" "}
-                    {(viewBooking.userId?._id)?.slice(-4) || "N/A"}
+                    {getReferenceSuffix(viewBooking.userId)}
                   </div>
                   <div>
                     <span className="text-slate-400">City ID:</span>{" "}
-                    {(viewBooking.city)?.slice(-4) || "N/A"}
+                    {getReferenceSuffix(viewBooking.city)}
                   </div>
                   <div>
                     <span className="text-slate-400">Sport ID:</span>{" "}
-                    {(viewBooking.sport)?.slice(-4) || "N/A"}
+                    {getReferenceSuffix(viewBooking.sport)}
                   </div>
                 </div>
               </div>

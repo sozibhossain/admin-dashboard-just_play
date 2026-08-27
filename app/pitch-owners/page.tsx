@@ -9,6 +9,7 @@ import {
   useOwnerStats,
 } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
+import { useConfirmation } from "@/components/confirmation-provider";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
   Table,
@@ -59,23 +60,42 @@ export default function PitchOwnersPage() {
   const verifyOwner = useVerifyOwner();
   const suspendOwner = useSuspendOwner();
   const rejectOwner = useRejectOwner();
+  const confirmAction = useConfirmation();
 
-  const handleVerify = (ownerId: string) => {
-    if (confirm("Verify this pitch owner?")) {
-      verifyOwner.mutate(ownerId);
-    }
+  const handleVerify = async (ownerId: string) => {
+    const confirmed = await confirmAction({
+      title: "Verify this pitch owner?",
+      description:
+        "Their business profile will be approved and marked as verified across the platform.",
+      confirmLabel: "Verify owner",
+      tone: "success",
+    });
+
+    if (confirmed) verifyOwner.mutate(ownerId);
   };
 
-  const handleSuspend = (ownerId: string) => {
-    if (confirm("Suspend this pitch owner?")) {
-      suspendOwner.mutate({ id: ownerId, reason: "Admin action" });
-    }
+  const handleSuspend = async (ownerId: string) => {
+    const confirmed = await confirmAction({
+      title: "Suspend this pitch owner?",
+      description:
+        "Their owner access and related management actions will be restricted until restored.",
+      confirmLabel: "Suspend owner",
+      tone: "warning",
+    });
+
+    if (confirmed) suspendOwner.mutate({ id: ownerId, reason: "Admin action" });
   };
 
-  const handleReject = (ownerId: string) => {
-    if (confirm("Reject this pitch owner application?")) {
-      rejectOwner.mutate({ id: ownerId, reason: "Admin action" });
-    }
+  const handleReject = async (ownerId: string) => {
+    const confirmed = await confirmAction({
+      title: "Reject this application?",
+      description:
+        "The pitch owner application will be rejected. Review the profile before continuing.",
+      confirmLabel: "Reject application",
+      tone: "danger",
+    });
+
+    if (confirmed) rejectOwner.mutate({ id: ownerId, reason: "Admin action" });
   };
 
   const { data: ownerStats } = useOwnerStats(viewOwner?._id);
@@ -84,10 +104,10 @@ export default function PitchOwnersPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">Pitch Owners</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Pitch Owners</h1>
           <p className="text-slate-400 mt-1">Manage pitch owner accounts and verification</p>
         </div>
 
@@ -107,7 +127,7 @@ export default function PitchOwnersPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />

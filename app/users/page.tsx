@@ -9,6 +9,7 @@ import {
   useUserById,
 } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
+import { useConfirmation } from "@/components/confirmation-provider";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
   Table,
@@ -69,17 +70,30 @@ export default function UsersPage() {
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
   const removeUser = useDeleteUser();
+  const confirmAction = useConfirmation();
 
-  const handleBan = (userId: string) => {
-    if (confirm("Are you sure you want to ban this user?")) {
-      banUser.mutate({ id: userId, reason: "Admin action" });
-    }
+  const handleBan = async (userId: string) => {
+    const confirmed = await confirmAction({
+      title: "Ban this user?",
+      description:
+        "They will lose access to the platform until an administrator restores their account.",
+      confirmLabel: "Ban user",
+      tone: "danger",
+    });
+
+    if (confirmed) banUser.mutate({ id: userId, reason: "Admin action" });
   };
 
-  const handleUnban = (userId: string) => {
-    if (confirm("Are you sure you want to unban this user?")) {
-      unbanUser.mutate(userId);
-    }
+  const handleUnban = async (userId: string) => {
+    const confirmed = await confirmAction({
+      title: "Restore this user?",
+      description:
+        "The user will be able to sign in and use the platform again immediately.",
+      confirmLabel: "Restore access",
+      tone: "success",
+    });
+
+    if (confirmed) unbanUser.mutate(userId);
   };
 
   const totalPages = data?.totalPages || 1;
@@ -87,10 +101,10 @@ export default function UsersPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">User Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">User Management</h1>
           <p className="text-slate-400 mt-1">Manage platform users and permissions</p>
         </div>
 
@@ -110,7 +124,7 @@ export default function UsersPage() {
               />
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                   <SelectValue placeholder="Filter by status" />

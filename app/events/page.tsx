@@ -153,14 +153,14 @@ export default function EventsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Event Management</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Event Management</h1>
             <p className="text-slate-400 mt-1">Manage all events shown in the player app</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreate}>
+          <Button className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto" onClick={openCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Add Event
           </Button>
@@ -421,7 +421,7 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                     City

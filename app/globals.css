@@ -120,6 +120,18 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-slate-950 text-slate-100;
+    color-scheme: dark;
+  }
+}
+
+@layer base {
+  ::selection {
+    @apply bg-blue-500/30 text-white;
+  }
+
+  * {
+    scrollbar-color: rgb(51 65 85) rgb(2 6 23);
+    scrollbar-width: thin;
   }
 }

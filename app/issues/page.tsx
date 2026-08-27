@@ -38,10 +38,10 @@ export default function IssuesPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
             <Flag className="w-8 h-8 text-red-400" />
             Player Reports
           </h1>
@@ -53,7 +53,7 @@ export default function IssuesPage() {
         {/* Filters */}
         <Card className="p-4 border-slate-700 bg-slate-900">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48 bg-slate-800 border-slate-700 text-white">
+            <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white sm:w-48">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent className="bg-slate-800 border-slate-700 text-white">

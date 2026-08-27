@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react"
-
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -81,23 +79,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="dark flex h-svh min-h-svh bg-slate-950 text-slate-100">
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,calc(100vw-3rem))] border-r border-slate-800 bg-slate-900 shadow-2xl shadow-black/40 transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:translate-x-0 lg:static`}
+        } lg:static lg:w-64 lg:translate-x-0 lg:shadow-none`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center gap-3 p-6 border-b border-slate-800">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-5 lg:px-6">
+            <div className="flex size-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-950/40">
               <span className="text-white font-bold text-lg">J</span>
             </div>
             <span className="text-xl font-bold text-white">JustPlay</span>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="ml-auto lg:hidden text-slate-400 hover:text-white"
+              className="ml-auto rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
+              aria-label="Close navigation"
             >
               <X className="w-5 h-5" />
             </button>
@@ -119,9 +118,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                         <Link
                           href={item.href}
                           onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
                             isActive
-                              ? "bg-blue-600 text-white"
+                              ? "bg-blue-600 text-white shadow-md shadow-blue-950/30"
                               : "text-slate-400 hover:text-white hover:bg-slate-800"
                           }`}
                         >
@@ -153,18 +152,20 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <header className="flex min-h-16 items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur sm:px-6">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-slate-400 hover:text-white"
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white lg:hidden"
+            aria-label="Open navigation"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -173,17 +174,19 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 pl-4 border-l border-slate-800">
-              <div className="text-right">
+              <div className="hidden text-right sm:block">
                 <p className="text-sm font-medium text-white">{session?.user?.name || "Admin"}</p>
                 <p className="text-xs text-slate-400">{session?.user?.role || "Super Admin"}</p>
               </div>
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full" />
+              <div className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-sm font-semibold text-white shadow-lg shadow-blue-950/40">
+                {(session?.user?.name || "A").charAt(0).toUpperCase()}
+              </div>
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto bg-slate-950">
+        <main className="min-w-0 flex-1 overflow-auto bg-slate-950">
           {children}
         </main>
       </div>

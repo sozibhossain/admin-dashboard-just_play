@@ -12,6 +12,7 @@ import {
   usePitchOwners,
 } from "@/hooks/use-api";
 import { AdminLayout } from "@/components/layout/admin-layout";
+import { useConfirmation } from "@/components/confirmation-provider";
 import { TableSkeleton } from "@/components/skeletons/table-skeleton";
 import {
   Table,
@@ -94,15 +95,22 @@ export default function PitchesPage() {
   const { data: citiesData } = useCities();
   const { data: sportsData } = useSports();
   const { data: ownersData } = usePitchOwners(1, 100);
+  const confirmAction = useConfirmation();
 
-  const handleStatusChange = (pitchId: string, newStatus: string) => {
+  const handleStatusChange = async (pitchId: string, newStatus: string) => {
+    const isMaintenance = newStatus === "maintenance";
     const message =
-      newStatus === "maintenance"
+      isMaintenance
         ? "Set this pitch to maintenance mode? This will immediately block new bookings."
         : "Reactivate this pitch for bookings?";
-    if (confirm(message)) {
-      updateStatus.mutate({ id: pitchId, status: newStatus });
-    }
+    const confirmed = await confirmAction({
+      title: isMaintenance ? "Enable maintenance mode?" : "Reactivate this pitch?",
+      description: message,
+      confirmLabel: isMaintenance ? "Enable maintenance" : "Reactivate pitch",
+      tone: isMaintenance ? "warning" : "success",
+    });
+
+    if (confirmed) updateStatus.mutate({ id: pitchId, status: newStatus });
   };
 
   const resetForm = () => {
@@ -177,14 +185,14 @@ export default function PitchesPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Pitch Management</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Pitch Management</h1>
             <p className="text-slate-400 mt-1">Manage all sports pitches and facilities</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={openCreate}>
+          <Button className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto" onClick={openCreate}>
             <Plus className="w-4 h-4 mr-2" />
             Add Pitch
           </Button>
@@ -556,7 +564,7 @@ export default function PitchesPage() {
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
           <div className="space-y-1">
             <p className="text-slate-500 font-semibold uppercase text-[10px] tracking-wider">Sport</p>
             <p className="text-slate-200 flex items-center gap-2 capitalize">

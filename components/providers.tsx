@@ -4,6 +4,7 @@ import { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
+import { ConfirmationProvider } from "@/components/confirmation-provider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,13 +24,18 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <Toaster
-          position="top-right"
-          richColors
-          theme="dark"
-          expand={true}
-        />
+        <ConfirmationProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            theme="dark"
+            expand={true}
+            toastOptions={{
+              className: "border-slate-700 bg-slate-900 text-slate-100",
+            }}
+          />
+        </ConfirmationProvider>
       </QueryClientProvider>
     </SessionProvider>
   );

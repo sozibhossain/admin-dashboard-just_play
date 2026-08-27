@@ -186,10 +186,10 @@ export default function SettingsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="max-w-4xl space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-white">System Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">System Settings</h1>
           <p className="text-slate-400 mt-1">Manage platform configuration and settings</p>
         </div>
 

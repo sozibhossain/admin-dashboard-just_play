@@ -72,15 +72,15 @@ export default function ReportsPage() {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-5 p-4 sm:space-y-6 sm:p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Reports & Analytics</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Reports & Analytics</h1>
             <p className="text-slate-400 mt-1">View comprehensive platform analytics</p>
           </div>
           <Button
-            className="bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
             onClick={handleExport}
             disabled={isExporting}
           >
@@ -91,8 +91,8 @@ export default function ReportsPage() {
 
         {/* Date Range Filter */}
         <Card className="p-4 border-slate-700 bg-slate-900">
-          <div className="flex items-end gap-4">
-            <div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-slate-200 mb-2">
                 Start Date
               </label>
@@ -105,7 +105,7 @@ export default function ReportsPage() {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-slate-200 mb-2">
                 End Date
               </label>
@@ -118,7 +118,7 @@ export default function ReportsPage() {
                 className="bg-slate-800 border-slate-700 text-white"
               />
             </div>
-            <Button variant="outline" className="border-slate-700 bg-transparent text-white">
+            <Button variant="outline" className="w-full border-slate-700 bg-transparent text-white">
               <Calendar className="w-4 h-4 mr-2" />
               Apply Filter
             </Button>
@@ -261,7 +261,7 @@ export default function ReportsPage() {
               Pitch Performance
             </h3>
             {topPitchesData?.pitches && topPitchesData.pitches.length > 0 ? (
-              <div className="border border-slate-700 rounded-lg overflow-hidden">
+              <div className="overflow-x-auto rounded-lg border border-slate-700">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-800 border-slate-700">
